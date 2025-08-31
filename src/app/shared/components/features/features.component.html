@@ -1,0 +1,52 @@
+<section class="py-16 bg-gradient-subtle">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h2 class="text-3xl md:text-4xl font-playfair font-bold text-deep-rose mb-4">
+        The Luli Beads Experience
+      </h2>
+      <p class="text-lg text-muted-foreground font-montserrat max-w-2xl mx-auto">
+        Every detail matters in creating your perfect handbag. Discover what makes 
+        our craftsmanship special and our service exceptional.
+      </p>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div *ngFor="let feature of features; let i = index" 
+           class="p-6 text-center hover:shadow-elegant transition-all duration-300 transform hover:scale-[1.02] border-0 bg-card/50 backdrop-blur-sm animate-fade-in group"
+           [style.animation-delay]="(i * 100) + 'ms'">
+        <div class="mb-4 flex justify-center">
+          <div class="p-3 rounded-full bg-luxury-pink group-hover:bg-rose-gold/10 transition-colors duration-300">
+            <svg class="h-6 w-6" [class]="feature.color + ' group-hover:scale-110 transition-transform duration-300'" 
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="feature.iconPath"/>
+            </svg>
+          </div>
+        </div>
+        
+        <h3 class="font-playfair font-semibold text-foreground mb-2 text-lg">
+          {{ feature.title }}
+        </h3>
+        
+        <p class="text-sm text-muted-foreground font-montserrat leading-relaxed">
+          {{ feature.description }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="text-center mt-12">
+      <div class="inline-flex items-center gap-2 text-rose-gold font-montserrat font-medium">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+        </svg>
+        <span>Experience luxury craftsmanship today</span>
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>

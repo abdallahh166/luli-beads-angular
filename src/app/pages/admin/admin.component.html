@@ -1,0 +1,339 @@
+<div class="min-h-screen bg-background">
+  <!-- Product Form Modal -->
+  <div *ngIf="showProductForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <app-product-form
+        [productId]="editingProduct?.id"
+        [isEditMode]="!!editingProduct"
+        (productSaved)="onProductSaved($event)"
+        (formCancelled)="onProductFormCancelled()">
+      </app-product-form>
+    </div>
+  </div>
+
+  <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-playfair font-bold text-deep-rose mb-2">Admin Dashboard</h1>
+          <p class="text-muted-foreground">Manage your Luli Beads store</p>
+        </div>
+        <div class="flex gap-2">
+          <button (click)="refreshData()" 
+                  [disabled]="refreshing"
+                  class="border border-border text-foreground py-2 px-4 rounded-lg hover:bg-muted transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" [class.animate-spin]="refreshing" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            Refresh
+          </button>
+          <button class="border border-border text-foreground py-2 px-4 rounded-lg hover:bg-muted transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            Export
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow-soft border border-border p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-muted-foreground">Total Sales</p>
+            <p class="text-2xl font-bold">${{ adminStats.totalSales.toLocaleString() }}</p>
+          </div>
+          <svg class="w-8 h-8 text-rose-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+          </svg>
+        </div>
+        <div class="flex items-center mt-4">
+          <span class="text-sm text-green-600">${{ adminStats.monthlyRevenue.toLocaleString() }} this month</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-soft border border-border p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-muted-foreground">Total Orders</p>
+            <p class="text-2xl font-bold">{{ adminStats.totalOrders }}</p>
+          </div>
+          <svg class="w-8 h-8 text-rose-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+          </svg>
+        </div>
+        <div class="flex items-center mt-4">
+          <span class="text-sm text-blue-600">{{ adminStats.monthlyOrders }} this month</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-soft border border-border p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-muted-foreground">Products</p>
+            <p class="text-2xl font-bold">{{ stats.totalProducts }}</p>
+          </div>
+          <svg class="w-8 h-8 text-rose-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+          </svg>
+        </div>
+        <div class="flex items-center mt-4">
+          <span [class]="'text-sm ' + (stats.lowStockProducts > 0 ? 'text-orange-600' : 'text-green-600')">
+            {{ stats.lowStockProducts }} low stock
+          </span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-soft border border-border p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-muted-foreground">Customers</p>
+            <p class="text-2xl font-bold">{{ adminStats.totalCustomers }}</p>
+          </div>
+          <svg class="w-8 h-8 text-rose-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+          </svg>
+        </div>
+        <div class="flex items-center mt-4">
+          <span [class]="'text-sm ' + (adminStats.pendingOrders > 0 ? 'text-red-600' : 'text-green-600')">
+            {{ adminStats.pendingOrders }} pending orders
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="w-full">
+      <!-- Tab Navigation -->
+      <div class="grid w-full grid-cols-5 mb-6">
+        <button (click)="setActiveTab('overview')" 
+                [class]="'flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium rounded-t-lg border-b-2 transition-colors ' +
+                         (activeTab === 'overview' ? 'text-deep-rose border-deep-rose bg-rose-50/50' : 'text-muted-foreground border-transparent hover:text-foreground')">
+          Overview
+        </button>
+        <button (click)="setActiveTab('orders')" 
+                [class]="'flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium rounded-t-lg border-b-2 transition-colors ' +
+                         (activeTab === 'orders' ? 'text-deep-rose border-deep-rose bg-rose-50/50' : 'text-muted-foreground border-transparent hover:text-foreground')">
+          Orders ({{ filteredOrders.length }})
+        </button>
+        <button (click)="setActiveTab('products')" 
+                [class]="'flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium rounded-t-lg border-b-2 transition-colors ' +
+                         (activeTab === 'products' ? 'text-deep-rose border-deep-rose bg-rose-50/50' : 'text-muted-foreground border-transparent hover:text-foreground')">
+          Products ({{ filteredProducts.length }})
+        </button>
+        <button (click)="setActiveTab('customers')" 
+                [class]="'flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium rounded-t-lg border-b-2 transition-colors ' +
+                         (activeTab === 'customers' ? 'text-deep-rose border-deep-rose bg-rose-50/50' : 'text-muted-foreground border-transparent hover:text-foreground')">
+          Customers
+        </button>
+        <button (click)="setActiveTab('analytics')" 
+                [class]="'flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium rounded-t-lg border-b-2 transition-colors ' +
+                         (activeTab === 'analytics' ? 'text-deep-rose border-deep-rose bg-rose-50/50' : 'text-muted-foreground border-transparent hover:text-foreground')">
+          Analytics
+        </button>
+      </div>
+
+      <!-- Overview Tab -->
+      <div *ngIf="activeTab === 'overview'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow-elegant border-0 p-6">
+          <h3 class="text-lg font-semibold mb-2">Quick Actions</h3>
+          <p class="text-muted-foreground mb-4">Common administrative tasks</p>
+          <div class="space-y-4">
+            <button (click)="openAddProductDialog()" 
+                    class="w-full bg-gradient-rose text-white py-3 px-4 rounded-lg font-medium hover:shadow-elegant transition-all duration-300 flex items-center justify-start">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Add New Product
+            </button>
+            <button (click)="setActiveTab('orders')" 
+                    class="w-full border border-border text-foreground py-3 px-4 rounded-lg hover:bg-muted transition-colors flex items-center justify-start">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+              </svg>
+              View Pending Orders ({{ adminStats.pendingOrders }})
+            </button>
+            <button (click)="setActiveTab('products')" 
+                    class="w-full border border-border text-foreground py-3 px-4 rounded-lg hover:bg-muted transition-colors flex items-center justify-start">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+              </svg>
+              Check Low Stock ({{ stats.lowStockProducts }})
+            </button>
+            <button (click)="setActiveTab('customers')" 
+                    class="w-full border border-border text-foreground py-3 px-4 rounded-lg hover:bg-muted transition-colors flex items-center justify-start">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+              </svg>
+              Manage Customers
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-elegant border-0 p-6">
+          <h3 class="text-lg font-semibold mb-2">Recent Activity</h3>
+          <p class="text-muted-foreground mb-4">Latest system updates</p>
+          <div class="space-y-3">
+            <div *ngFor="let order of orders.slice(0, 5)" class="flex items-center space-x-3 text-sm">
+              <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+              <div class="flex-1">
+                <p>New order from {{ order.customerName }}</p>
+                <p class="text-muted-foreground text-xs">
+                  {{ order.createdAt | date:'medium' }}
+                </p>
+              </div>
+              <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getStatusColor(order.status)">
+                {{ order.status }}
+              </span>
+            </div>
+            <div *ngIf="orders.length === 0" class="text-center text-muted-foreground py-4">
+              No recent activity
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Products Tab -->
+      <div *ngIf="activeTab === 'products'" class="bg-white rounded-lg shadow-elegant border-0 p-6">
+        <div class="flex flex-row items-center justify-between mb-6">
+          <div>
+            <h3 class="flex items-center gap-2 text-lg font-semibold">
+              Product Management
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                {{ filteredProducts.length }} products
+              </span>
+            </h3>
+            <p class="text-muted-foreground">Manage your product catalog</p>
+            
+            <!-- Search and Filter Controls -->
+            <div class="flex flex-col sm:flex-row gap-4 mt-4">
+              <div class="relative flex-1">
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <input placeholder="Search products by name or description..."
+                       [(ngModel)]="productSearch"
+                       class="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-deep-rose focus:border-transparent transition-all duration-200">
+              </div>
+              <select [(ngModel)]="productStockFilter" 
+                      class="w-full sm:w-40 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-deep-rose focus:border-transparent transition-all duration-200">
+                <option value="all">All Products</option>
+                <option value="in-stock">In Stock</option>
+                <option value="low-stock">Low Stock</option>
+                <option value="out-of-stock">Out of Stock</option>
+              </select>
+            </div>
+          </div>
+          <button (click)="openAddProductDialog()" 
+                  class="bg-gradient-rose text-white py-2 px-4 rounded-lg font-medium hover:shadow-elegant transition-all duration-300 flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Add Product
+          </button>
+        </div>
+        
+        <div class="space-y-4">
+          <div *ngIf="filteredProducts.length === 0" class="text-center py-12">
+            <svg class="w-12 h-12 text-muted-foreground mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+            </svg>
+            <p class="text-muted-foreground">
+              {{ productSearch || productStockFilter !== 'all' ? 'No products match your filters' : 'No products found' }}
+            </p>
+          </div>
+          
+          <div *ngFor="let product of filteredProducts" 
+               class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="relative">
+                <img [src]="product.images[0] || '/placeholder.svg'" 
+                     [alt]="product.name"
+                     class="w-16 h-16 object-cover rounded-lg">
+                <div *ngIf="product.featured" 
+                     class="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
+                  <div class="w-2 h-2 bg-white rounded-full"></div>
+                </div>
+              </div>
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <p class="font-medium">{{ product.name }}</p>
+                  <span *ngIf="product.featured" 
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                    Featured
+                  </span>
+                </div>
+                <p class="text-sm text-muted-foreground">
+                  Colors: {{ product.colors.length > 0 ? product.colors.slice(0, 3).join(', ') : 'N/A' }}
+                  <span *ngIf="product.colors.length > 3"> +{{ product.colors.length - 3 }} more</span>
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  Handles: {{ product.handles.length > 0 ? product.handles.slice(0, 2).join(', ') : 'N/A' }}
+                  <span *ngIf="product.handles.length > 2"> +{{ product.handles.length - 2 }} more</span>
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  Stock: {{ product.stockQuantity }} units
+                </p>
+              </div>
+            </div>
+            <div class="text-right space-y-1">
+              <div class="flex items-center gap-2">
+                <p class="font-medium">${{ product.price.toFixed(2) }}</p>
+                <p *ngIf="product.originalPrice && product.originalPrice > product.price" 
+                   class="text-sm text-muted-foreground line-through">
+                  ${{ product.originalPrice.toFixed(2) }}
+                </p>
+              </div>
+              <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + 
+                              (!product.inStock ? 'bg-red-100 text-red-800' : 
+                               product.stockQuantity < 5 ? 'bg-yellow-100 text-yellow-800' : 
+                               'bg-green-100 text-green-800')">
+                {{ !product.inStock ? 'Out of Stock' : 
+                   product.stockQuantity < 5 ? 'Low Stock (' + product.stockQuantity + ')' : 
+                   'In Stock' }}
+              </span>
+              <p class="text-xs text-muted-foreground">
+                Created: {{ product.createdAt ? (product.createdAt | date:'short') : 'Unknown' }}
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <button (click)="editProduct(product)" 
+                      class="w-8 h-8 border border-border text-foreground rounded-lg hover:bg-muted transition-colors flex items-center justify-center"
+                      title="Edit Product">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+              </button>
+              <button (click)="deleteProduct(product.id)" 
+                      class="w-8 h-8 border border-border text-foreground rounded-lg hover:bg-muted transition-colors flex items-center justify-center"
+                      title="Delete Product">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Other tabs placeholder -->
+      <div *ngIf="activeTab === 'orders'" class="bg-white rounded-lg shadow-elegant border-0 p-6">
+        <h3 class="text-lg font-semibold mb-4">Order Management</h3>
+        <p class="text-muted-foreground">Order management functionality coming soon...</p>
+      </div>
+
+      <div *ngIf="activeTab === 'customers'" class="bg-white rounded-lg shadow-elegant border-0 p-6">
+        <h3 class="text-lg font-semibold mb-4">Customer Management</h3>
+        <p class="text-muted-foreground">Customer management functionality coming soon...</p>
+      </div>
+
+      <div *ngIf="activeTab === 'analytics'" class="bg-white rounded-lg shadow-elegant border-0 p-6">
+        <h3 class="text-lg font-semibold mb-4">Analytics & Reports</h3>
+        <p class="text-muted-foreground">Analytics functionality coming soon...</p>
+      </div>
+    </div>
+  </main>
+</div>

@@ -1,0 +1,74 @@
+<div class="min-h-screen bg-background">
+  <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-playfair font-bold text-deep-rose mb-2">My Wishlist</h1>
+      <p class="text-muted-foreground">Items you've saved for later</p>
+    </div>
+
+    <!-- Wishlist Items -->
+    <div *ngIf="wishlistItems.length > 0; else emptyWishlist" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div *ngFor="let item of wishlistItems; trackBy: trackByItemId" 
+           class="bg-white rounded-lg shadow-soft border border-border overflow-hidden group hover:shadow-elegant transition-all duration-300">
+        
+        <!-- Product Image -->
+        <div class="relative aspect-square overflow-hidden">
+          <img [src]="item.image" 
+               [alt]="item.name"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+          
+          <!-- Remove Button -->
+          <button (click)="removeFromWishlist(item.id)" 
+                  class="absolute top-2 right-2 w-8 h-8 bg-white/80 hover:bg-white text-red-500 hover:text-red-600 rounded-full flex items-center justify-center transition-all duration-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Product Info -->
+        <div class="p-4">
+          <h3 class="font-playfair font-semibold text-lg mb-2 line-clamp-1">
+            {{ item.name }}
+          </h3>
+          <p class="text-lg font-semibold text-rose-gold mb-4">
+            ${{ item.price.toFixed(2) }}
+          </p>
+          
+          <!-- Actions -->
+          <div class="space-y-2">
+            <button (click)="addToCart(item)"
+                    class="w-full bg-gradient-rose text-white py-2 px-4 rounded-lg font-medium hover:shadow-elegant transition-all duration-300 flex items-center justify-center">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+              </svg>
+              Add to Cart
+            </button>
+            <a [routerLink]="['/product', item.id]"
+               class="block w-full border border-border text-foreground py-2 px-4 rounded-lg font-medium hover:bg-muted transition-colors text-center">
+              View Details
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty Wishlist -->
+    <ng-template #emptyWishlist>
+      <div class="text-center max-w-md mx-auto py-16">
+        <svg class="w-16 h-16 mx-auto mb-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+        </svg>
+        <h2 class="text-2xl font-playfair font-bold text-deep-rose mb-4">Your wishlist is empty</h2>
+        <p class="text-muted-foreground mb-8">Save your favorite items for later by adding them to your wishlist.</p>
+                        <a routerLink="/" 
+           class="inline-flex items-center justify-center bg-gradient-rose text-white py-3 px-6 rounded-lg font-medium hover:shadow-elegant transition-all duration-300">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+          </svg>
+          Discover Products
+        </a>
+      </div>
+    </ng-template>
+  </main>
+</div>

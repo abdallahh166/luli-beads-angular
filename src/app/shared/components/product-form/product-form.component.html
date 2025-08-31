@@ -1,0 +1,301 @@
+<div class="product-form-container">
+  <div class="form-header">
+    <h2 class="text-2xl font-playfair font-bold text-deep-rose">
+      {{ isEditMode ? 'Edit Product' : 'Add New Product' }}
+    </h2>
+    <p class="text-muted-foreground">
+      {{ isEditMode ? 'Update product information' : 'Create a new product for your store' }}
+    </p>
+  </div>
+
+  <!-- Success Message -->
+  <div *ngIf="successMessage" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+    <p class="text-green-600 text-sm">{{ successMessage }}</p>
+  </div>
+
+  <!-- Error Messages -->
+  <div *ngIf="errors.length > 0" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+    <ul class="text-red-600 text-sm space-y-1">
+      <li *ngFor="let error of errors">{{ error }}</li>
+    </ul>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" class="space-y-6">
+    <!-- Basic Information -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="space-y-2">
+        <label for="name" class="block text-sm font-medium text-foreground">Product Name *</label>
+        <input
+          id="name"
+          type="text"
+          [(ngModel)]="formData.name"
+          name="name"
+          required
+          class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-deep-rose focus:border-transparent transition-all duration-200"
+          placeholder="Enter product name">
+      </div>
+
+      <div class="space-y-2">
+        <label for="category" class="block text-sm font-medium text-foreground">Category *</label>
+        <select
+          id="category"
+          [(ngModel)]="formData.category_id"
+          name="category"
+          required
+          class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-deep-rose focus:border-transparent transition-all duration-200">
+          <option *ngFor="let category of categories" [value]="category.id">
+            {{ category.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="space-y-2">
+      <label for="description" class="block text-sm font-medium text-foreground">Description *</label>
+      <textarea
+        id="description"
+        [(ngModel)]="formData.description"
+        name="description"
+        required
+        rows="4"
+        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-deep-rose focus:border-transparent transition-all duration-200"
+        placeholder="Enter product description"></textarea>
+    </div>
+
+    <!-- Pricing -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="space-y-2">
+        <label for="price" class="block text-sm font-medium text-foreground">Current Price *</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+          <input
+            id="price"
+            type="number"
+            [(ngModel)]="formData.price"
+            name="price"
+            required
+            min="0"
+            step="0.01"
+            class="w-full pl-8 pr-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-deep-rose focus:border-transparent transition-all duration-200"
+            placeholder="0.00">
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <label for="original-price" class="block text-sm font-medium text-foreground">Original Price</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+          <input
+            id="original-price"
+            type="number"
+            [(ngModel)]="formData.original_price"
+            name="original_price"
+            min="0"
+            step="0.01"
+            class="w-full pl-8 pr-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-deep-rose focus:border-transparent transition-all duration-200"
+            placeholder="0.00">
+        </div>
+        <p *ngIf="discountPercentage > 0" class="text-sm text-rose-gold">
+          {{ discountPercentage }}% discount
+        </p>
+      </div>
+
+      <div class="space-y-2">
+        <label for="stock" class="block text-sm font-medium text-foreground">Stock Quantity *</label>
+        <input
+          id="stock"
+          type="number"
+          [(ngModel)]="formData.stock_quantity"
+          name="stock_quantity"
+          required
+          min="0"
+          class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-deep-rose focus:border-transparent transition-all duration-200"
+          placeholder="0">
+      </div>
+    </div>
+
+    <!-- Images -->
+    <div class="space-y-4">
+      <label class="block text-sm font-medium text-foreground">Product Images *</label>
+      
+      <!-- Add new image -->
+      <div class="flex gap-2">
+        <input
+          type="url"
+          [(ngModel)]="formData.image_url"
+          name="image_url"
+          class="flex-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-deep-rose focus:border-transparent transition-all duration-200"
+          placeholder="Enter image URL">
+        <button
+          type="button"
+          (click)="addImage()"
+          class="px-4 py-2 bg-deep-rose text-white rounded-lg hover:bg-deep-rose/90 transition-colors">
+          Add
+        </button>
+      </div>
+
+      <!-- Image list -->
+      <div *ngIf="formData.images.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div *ngFor="let image of formData.images; let i = index" class="relative group">
+          <img [src]="image" [alt]="'Product image ' + (i + 1)" 
+               class="w-full h-24 object-cover rounded-lg border border-border">
+          <button
+            type="button"
+            (click)="removeImage(image)"
+            class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            ×
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Colors -->
+    <div class="space-y-4">
+      <label class="block text-sm font-medium text-foreground">Available Colors *</label>
+      
+      <!-- Selected colors -->
+      <div *ngIf="formData.colors.length > 0" class="flex flex-wrap gap-2">
+        <span *ngFor="let color of formData.colors" 
+              class="inline-flex items-center gap-2 px-3 py-1 bg-rose-50 text-deep-rose rounded-full text-sm">
+          {{ color }}
+          <button
+            type="button"
+            (click)="removeColor(color)"
+            class="w-4 h-4 bg-deep-rose text-white rounded-full flex items-center justify-center text-xs">
+            ×
+          </button>
+        </span>
+      </div>
+
+      <!-- Add color -->
+      <div class="flex gap-2">
+        <select
+          #colorSelect
+          class="flex-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-deep-rose focus:border-transparent transition-all duration-200">
+          <option value="">Select a color</option>
+          <option *ngFor="let color of availableColors" [value]="color">
+            {{ color }}
+          </option>
+        </select>
+        <button
+          type="button"
+          (click)="addColor(colorSelect.value); colorSelect.value = ''"
+          class="px-4 py-2 bg-deep-rose text-white rounded-lg hover:bg-deep-rose/90 transition-colors">
+          Add Color
+        </button>
+      </div>
+    </div>
+
+    <!-- Handle Types -->
+    <div class="space-y-4">
+      <label class="block text-sm font-medium text-foreground">Available Handle Types *</label>
+      
+      <!-- Selected handle types -->
+      <div *ngIf="formData.handle_types.length > 0" class="flex flex-wrap gap-2">
+        <span *ngFor="let handle of formData.handle_types" 
+              class="inline-flex items-center gap-2 px-3 py-1 bg-rose-50 text-deep-rose rounded-full text-sm">
+          {{ handle }}
+          <button
+            type="button"
+            (click)="removeHandleType(handle)"
+            class="w-4 h-4 bg-deep-rose text-white rounded-full flex items-center justify-center text-xs">
+            ×
+          </button>
+        </span>
+      </div>
+
+      <!-- Add handle type -->
+      <div class="flex gap-2">
+        <select
+          #handleSelect
+          class="flex-1 px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-deep-rose focus:border-transparent transition-all duration-200">
+          <option value="">Select a handle type</option>
+          <option *ngFor="let handle of availableHandleTypes" [value]="handle">
+            {{ handle }}
+          </option>
+        </select>
+        <button
+          type="button"
+          (click)="addHandleType(handleSelect.value); handleSelect.value = ''"
+          class="px-4 py-2 bg-deep-rose text-white rounded-lg hover:bg-deep-rose/90 transition-colors">
+          Add Handle
+        </button>
+      </div>
+    </div>
+
+    <!-- Product Flags -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold text-foreground">Product Settings</h3>
+        
+        <label class="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            [(ngModel)]="formData.in_stock"
+            name="in_stock"
+            class="w-4 h-4 text-deep-rose border-border rounded focus:ring-deep-rose">
+          <span class="text-sm text-foreground">In Stock</span>
+        </label>
+
+        <label class="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            [(ngModel)]="formData.customizable"
+            name="customizable"
+            class="w-4 h-4 text-deep-rose border-border rounded focus:ring-deep-rose">
+          <span class="text-sm text-foreground">Customizable</span>
+        </label>
+      </div>
+
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold text-foreground">Product Flags</h3>
+        
+        <label class="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            [(ngModel)]="formData.featured"
+            name="featured"
+            class="w-4 h-4 text-deep-rose border-border rounded focus:ring-deep-rose">
+          <span class="text-sm text-foreground">Featured Product</span>
+        </label>
+
+        <label class="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            [(ngModel)]="formData.is_new"
+            name="is_new"
+            class="w-4 h-4 text-deep-rose border-border rounded focus:ring-deep-rose">
+          <span class="text-sm text-foreground">New Product</span>
+        </label>
+
+        <label class="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            [(ngModel)]="formData.is_bestseller"
+            name="is_bestseller"
+            class="w-4 h-4 text-deep-rose border-border rounded focus:ring-deep-rose">
+          <span class="text-sm text-foreground">Bestseller</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="flex justify-end gap-4 pt-6 border-t border-border">
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="px-6 py-2 border border-border text-foreground rounded-lg hover:bg-muted transition-colors">
+        Cancel
+      </button>
+      
+      <button
+        type="submit"
+        [disabled]="!isFormValid || isLoading"
+        class="px-6 py-2 bg-gradient-rose text-white rounded-lg hover:shadow-elegant transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+        <span *ngIf="isLoading" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+        {{ isLoading ? 'Saving...' : (isEditMode ? 'Update Product' : 'Create Product') }}
+      </button>
+    </div>
+  </form>
+</div>

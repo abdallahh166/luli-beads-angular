@@ -1,0 +1,185 @@
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Cart Sync Status -->
+  <div *ngIf="hasError" class="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+    <div class="flex items-center gap-2 text-destructive">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span class="text-sm">{{ cartState.error }}</span>
+    </div>
+  </div>
+
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-playfair font-bold text-deep-rose mb-2">Shopping Cart</h1>
+        <p class="text-muted-foreground">Review your items and proceed to checkout</p>
+        <div *ngIf="cartState.lastSync" class="text-xs text-muted-foreground mt-1">
+          Last synced: {{ cartState.lastSync | date:'short' }}
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          class="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:border-rose-gold transition-colors"
+          (click)="refreshCart()"
+          [disabled]="isLoading">
+          <svg class="w-4 h-4" [class.animate-spin]="isLoading" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          Refresh
+        </button>
+        <button
+          *ngIf="!isCartEmpty"
+          class="px-4 py-2 text-destructive border border-destructive/20 rounded-lg hover:bg-destructive/10 transition-colors"
+          (click)="clearCart()"
+          [disabled]="isLoading">
+          Clear Cart
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!isCartEmpty; else emptyCart" class="grid lg:grid-cols-3 gap-8">
+    <!-- Cart Items -->
+    <div class="lg:col-span-2 space-y-4">
+      <div *ngFor="let item of cartState.items; trackBy: trackByItemId" 
+           class="bg-card rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-6">
+          <div class="flex gap-4">
+            <div class="w-24 h-24 rounded-lg overflow-hidden bg-gradient-subtle">
+              <img
+                [src]="item.product.images[0]"
+                [alt]="item.product.name"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            
+            <div class="flex-1">
+              <div class="flex justify-between items-start mb-2">
+                <h3 class="font-playfair font-semibold text-lg">{{ item.product.name }}</h3>
+                <button
+                  (click)="removeItem(item.id)"
+                  class="text-muted-foreground hover:text-destructive transition-colors"
+                  [disabled]="isLoading">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              </div>
+              
+              <div class="space-y-1 text-sm text-muted-foreground mb-4">
+                <p *ngIf="item.selectedColor">Color: {{ item.selectedColor }}</p>
+                <p *ngIf="item.selectedHandle">Handle: {{ item.selectedHandle }}</p>
+                <p *ngIf="item.customName">Custom Name: {{ item.customName }}</p>
+              </div>
+
+              <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                  <button
+                    (click)="updateQuantity(item.id, item.quantity - 1)"
+                    class="h-8 w-8 border border-border rounded-md hover:border-rose-gold transition-colors flex items-center justify-center"
+                    [disabled]="isLoading || item.quantity <= 1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                    </svg>
+                  </button>
+                  <span class="w-8 text-center font-medium">{{ item.quantity }}</span>
+                  <button
+                    (click)="updateQuantity(item.id, item.quantity + 1)"
+                    class="h-8 w-8 border border-border rounded-md hover:border-rose-gold transition-colors flex items-center justify-center"
+                    [disabled]="isLoading">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="text-right">
+                  <p class="font-semibold">${{ (item.price * item.quantity).toFixed(2) }}</p>
+                  <p class="text-sm text-muted-foreground">${{ item.price.toFixed(2) }} each</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="lg:col-span-1">
+      <div class="bg-card rounded-2xl shadow-sm sticky top-8">
+        <div class="p-6">
+          <h3 class="font-playfair font-semibold text-lg mb-4">Order Summary</h3>
+          
+          <div class="space-y-3 mb-4">
+            <div class="flex justify-between">
+              <span>Subtotal</span>
+              <span>${{ cartState.summary.subtotal.toFixed(2) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Shipping</span>
+              <span>{{ cartState.summary.shipping === 0 ? 'Free' : '$' + cartState.summary.shipping.toFixed(2) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Tax</span>
+              <span>${{ cartState.summary.tax.toFixed(2) }}</span>
+            </div>
+            <div *ngIf="cartState.summary.totalDiscount > 0" class="flex justify-between text-green-600">
+              <span>Discount</span>
+              <span>-${{ cartState.summary.totalDiscount.toFixed(2) }}</span>
+            </div>
+            <div class="border-t pt-3">
+              <div class="flex justify-between font-semibold text-lg">
+                <span>Total</span>
+                <span>${{ cartState.summary.totalPrice.toFixed(2) }}</span>
+              </div>
+              <p class="text-sm text-muted-foreground">{{ cartState.summary.totalItems }} item(s)</p>
+            </div>
+          </div>
+
+          <!-- Coupon Code -->
+          <div class="mb-4">
+            <div class="flex gap-2">
+              <input
+                type="text"
+                [(ngModel)]="couponCode"
+                placeholder="Coupon code"
+                class="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent"
+              />
+              <button
+                (click)="applyCoupon()"
+                class="px-4 py-2 bg-rose-gold text-white rounded-lg hover:bg-rose-gold/90 transition-colors"
+                [disabled]="!couponCode.trim()">
+                Apply
+              </button>
+            </div>
+          </div>
+
+          <!-- Checkout Button -->
+          <button
+            routerLink="/checkout"
+            class="w-full py-3 bg-deep-rose text-white rounded-lg hover:bg-deep-rose/90 transition-colors font-semibold">
+            Proceed to Checkout
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty Cart Template -->
+  <ng-template #emptyCart>
+    <div class="text-center py-16">
+      <div class="w-24 h-24 mx-auto mb-6 bg-gradient-subtle rounded-full flex items-center justify-center">
+        <svg class="w-12 h-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+        </svg>
+      </div>
+      <h2 class="text-2xl font-playfair font-semibold text-deep-rose mb-2">Your cart is empty</h2>
+      <p class="text-muted-foreground mb-6">Looks like you haven't added any items to your cart yet.</p>
+      <button
+        routerLink="/products"
+        class="px-6 py-3 bg-deep-rose text-white rounded-lg hover:bg-deep-rose/90 transition-colors font-semibold">
+        Start Shopping
+      </button>
+    </div>
+  </ng-template>
+</div>

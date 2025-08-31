@@ -1,0 +1,117 @@
+<div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" (click)="close.emit()">
+      <div class="min-h-screen flex items-start justify-center p-4" (click)="$event.stopPropagation()">
+        <div class="bg-background rounded-2xl shadow-2xl w-full max-w-2xl mt-20 animate-scale-in">
+          <!-- Header -->
+          <div class="flex items-center justify-between p-6 border-b border-border">
+            <h2 class="text-2xl font-playfair font-bold text-foreground">
+              Search Products
+            </h2>
+            <button mat-icon-button (click)="close.emit()" class="text-muted-foreground hover:text-foreground">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          
+          <!-- Search Input -->
+          <div class="p-6">
+            <div class="relative">
+              <mat-icon class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                search
+              </mat-icon>
+              <input 
+                matInput
+                [(ngModel)]="searchQuery"
+                (ngModelChange)="onSearchChange($event)"
+                placeholder="Search for products, colors, or styles..."
+                class="w-full pl-12 pr-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-rose-gold focus:border-transparent bg-background text-foreground"
+                autocomplete="off"
+                autofocus>
+            </div>
+            
+            <!-- Search Results -->
+            <div *ngIf="searchResults.length > 0" class="mt-6">
+              <h3 class="text-lg font-montserrat font-semibold text-foreground mb-4">
+                Search Results ({{ searchResults.length }})
+              </h3>
+              
+              <div class="space-y-3 max-h-96 overflow-y-auto">
+                <div *ngFor="let product of searchResults" 
+                     (click)="selectProduct(product)"
+                     class="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors duration-200">
+                  
+                  <img [src]="product.images[0]" 
+                       [alt]="product.name"
+                       class="w-16 h-16 object-cover rounded-lg">
+                  
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-montserrat font-medium text-foreground truncate">
+                      {{ product.name }}
+                    </h4>
+                    <p class="text-sm text-muted-foreground truncate">
+                      {{ product.description }}
+                    </p>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-lg font-playfair font-bold text-foreground">
+                        ${{ product.price.toFixed(2) }}
+                      </span>
+                      <span *ngIf="product.originalPrice" 
+                            class="text-sm text-muted-foreground line-through">
+                        ${{ product.originalPrice.toFixed(2) }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-center gap-2">
+                    <div *ngFor="let color of product.colors.slice(0, 2)" 
+                         class="w-4 h-4 rounded-full border border-border"
+                         [style.background-color]="getColorValue(color)">
+                    </div>
+                    <span *ngIf="product.colors.length > 2" 
+                          class="text-xs text-muted-foreground">
+                      +{{ product.colors.length - 2 }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- No Results -->
+            <div *ngIf="searchQuery && searchResults.length === 0 && !isSearching" class="mt-6 text-center py-8">
+              <mat-icon class="text-4xl text-muted-foreground mb-4">search_off</mat-icon>
+              <p class="text-muted-foreground font-montserrat">
+                No products found matching "{{ searchQuery }}"
+              </p>
+              <p class="text-sm text-muted-foreground mt-2">
+                Try different keywords or browse our full collection
+              </p>
+            </div>
+            
+            <!-- Loading -->
+            <div *ngIf="isSearching" class="mt-6 text-center py-8">
+              <mat-icon class="text-4xl text-muted-foreground animate-spin mb-4">refresh</mat-icon>
+              <p class="text-muted-foreground font-montserrat">Searching...</p>
+            </div>
+            
+            <!-- Popular Searches -->
+            <div *ngIf="!searchQuery && searchResults.length === 0" class="mt-6">
+              <h3 class="text-lg font-montserrat font-semibold text-foreground mb-4">
+                Popular Searches
+              </h3>
+              <div class="flex flex-wrap gap-2">
+                <button *ngFor="let tag of popularTags" 
+                        (click)="onSearchChange(tag)"
+                        class="px-3 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg text-sm font-montserrat transition-colors duration-200">
+                  {{ tag }}
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Footer -->
+          <div class="p-6 border-t border-border">
+            <button mat-button (click)="close.emit()" class="text-muted-foreground hover:text-foreground">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>

@@ -1,0 +1,257 @@
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-8">
+    <a routerLink="/cart" class="inline-flex items-center text-muted-foreground hover:text-rose-gold transition-colors mb-4">
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Back to Cart
+    </a>
+    <h1 class="text-3xl font-playfair font-bold text-deep-rose mb-2">Checkout</h1>
+    <p class="text-muted-foreground">Complete your order</p>
+  </div>
+
+  @if (cartState.items.length > 0) {
+    <form (ngSubmit)="onSubmit()">
+      <div class="grid lg:grid-cols-3 gap-8">
+        <!-- Checkout Form -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Contact Information -->
+          <div class="bg-card rounded-2xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-border">
+              <h2 class="font-playfair text-xl text-foreground">Contact Information</h2>
+            </div>
+            <div class="p-6 space-y-4">
+              <div>
+                <label for="email" class="block text-sm font-medium text-foreground mb-2">Email Address</label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  [(ngModel)]="formData.email"
+                  name="email"
+                  placeholder="your@email.com"
+                  class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent"
+                />
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label for="firstName" class="block text-sm font-medium text-foreground mb-2">First Name</label>
+                  <input
+                    id="firstName"
+                    type="text"
+                    required
+                    [(ngModel)]="formData.firstName"
+                    name="firstName"
+                    placeholder="First name"
+                    class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label for="lastName" class="block text-sm font-medium text-foreground mb-2">Last Name</label>
+                  <input
+                    id="lastName"
+                    type="text"
+                    required
+                    [(ngModel)]="formData.lastName"
+                    name="lastName"
+                    placeholder="Last name"
+                    class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div>
+                <label for="phone" class="block text-sm font-medium text-foreground mb-2">Phone Number</label>
+                <input
+                  id="phone"
+                  type="tel"
+                  required
+                  [(ngModel)]="formData.phone"
+                  name="phone"
+                  placeholder="+1 (555) 123-4567"
+                  class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <!-- Shipping Address -->
+          <div class="bg-card rounded-2xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-border">
+              <h2 class="font-playfair text-xl text-foreground">Shipping Address</h2>
+            </div>
+            <div class="p-6 space-y-4">
+              <div>
+                <label for="address" class="block text-sm font-medium text-foreground mb-2">Address</label>
+                <input
+                  id="address"
+                  type="text"
+                  required
+                  [(ngModel)]="formData.address"
+                  name="address"
+                  placeholder="123 Main Street"
+                  class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent"
+                />
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label for="city" class="block text-sm font-medium text-foreground mb-2">City</label>
+                  <input
+                    id="city"
+                    type="text"
+                    required
+                    [(ngModel)]="formData.city"
+                    name="city"
+                    placeholder="City"
+                    class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label for="postalCode" class="block text-sm font-medium text-foreground mb-2">Postal Code</label>
+                  <input
+                    id="postalCode"
+                    type="text"
+                    required
+                    [(ngModel)]="formData.postalCode"
+                    name="postalCode"
+                    placeholder="12345"
+                    class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div>
+                <label for="notes" class="block text-sm font-medium text-foreground mb-2">Delivery Notes (Optional)</label>
+                <textarea
+                  id="notes"
+                  [(ngModel)]="formData.notes"
+                  name="notes"
+                  placeholder="Any special delivery instructions..."
+                  rows="3"
+                  class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent resize-none"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Payment Method -->
+          <div class="bg-card rounded-2xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-border">
+              <h2 class="font-playfair text-xl text-foreground">Payment Method</h2>
+            </div>
+            <div class="p-6">
+              <div class="space-y-4">
+                <div class="flex items-center space-x-2 p-4 border border-border rounded-lg">
+                  <input type="radio" id="card" value="card" [(ngModel)]="paymentMethod" name="paymentMethod" class="w-4 h-4 text-rose-gold">
+                  <label for="card" class="flex items-center cursor-pointer">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                    </svg>
+                    Credit Card
+                  </label>
+                </div>
+                <div class="flex items-center space-x-2 p-4 border border-border rounded-lg">
+                  <input type="radio" id="cod" value="cod" [(ngModel)]="paymentMethod" name="paymentMethod" class="w-4 h-4 text-rose-gold">
+                  <label for="cod" class="flex items-center cursor-pointer">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    Cash on Delivery
+                  </label>
+                </div>
+              </div>
+
+              @if (paymentMethod === 'card') {
+                <div class="mt-4 space-y-4">
+                  <div>
+                    <label for="cardNumber" class="block text-sm font-medium text-foreground mb-2">Card Number</label>
+                    <input id="cardNumber" placeholder="1234 5678 9012 3456" 
+                           class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent" />
+                  </div>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label for="expiry" class="block text-sm font-medium text-foreground mb-2">Expiry Date</label>
+                      <input id="expiry" placeholder="MM/YY" 
+                             class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent" />
+                    </div>
+                    <div>
+                      <label for="cvv" class="block text-sm font-medium text-foreground mb-2">CVV</label>
+                      <input id="cvv" placeholder="123" 
+                             class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-rose-gold focus:border-transparent" />
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="lg:col-span-1">
+          <div class="bg-card rounded-2xl shadow-sm sticky top-8">
+            <div class="p-6">
+              <h3 class="font-playfair font-semibold text-lg mb-4">Order Summary</h3>
+              
+              <div class="space-y-4">
+                @for (item of cartState.items; track trackByItemId($index, item)) {
+                  <div class="flex justify-between">
+                    <div>
+                      <p class="font-medium">{{ item.product.name }}</p>
+                      <p class="text-sm text-muted-foreground">Qty: {{ item.quantity }}</p>
+                      @if (item.customName) {
+                        <p class="text-sm text-muted-foreground">Custom: {{ item.customName }}</p>
+                      }
+                    </div>
+                    <span>${{ (item.price * item.quantity).toFixed(2) }}</span>
+                  </div>
+                }
+
+                <div class="border-t border-border"></div>
+
+                <div class="space-y-2">
+                  <div class="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>${{ cartState.summary.subtotal.toFixed(2) }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>Shipping</span>
+                    <span class="text-rose-gold">Free</span>
+                  </div>
+                </div>
+
+                <div class="border-t border-border"></div>
+
+                <div class="flex justify-between font-semibold text-lg">
+                  <span>Total</span>
+                  <span>${{ cartState.summary.totalPrice.toFixed(2) }}</span>
+                </div>
+
+                <button 
+                  type="submit" 
+                  class="w-full bg-deep-rose hover:bg-deep-rose/90 text-white px-6 py-3 text-lg font-medium rounded-lg transition-all duration-300 mt-6"
+                  [disabled]="isSubmitting || cartState.items.length === 0">
+                  {{ isSubmitting ? 'Processing...' : 'Complete Order' }}
+                </button>
+
+                <p class="text-xs text-muted-foreground text-center mt-4">
+                  By placing your order, you agree to our Terms of Service and Privacy Policy.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  } @else {
+    <!-- Empty Cart -->
+    <div class="text-center py-20">
+      <svg class="w-16 h-16 mx-auto mb-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+      </svg>
+      <h2 class="text-2xl font-playfair font-bold text-deep-rose mb-4">Your cart is empty</h2>
+      <p class="text-muted-foreground mb-8">You need to add items to your cart before proceeding to checkout.</p>
+      <a routerLink="/cart" 
+         class="inline-block bg-deep-rose hover:bg-deep-rose/90 text-white px-8 py-3 text-lg font-medium rounded-lg transition-all duration-300">
+        View Cart
+      </a>
+    </div>
+  }
+</div>

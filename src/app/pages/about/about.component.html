@@ -1,0 +1,147 @@
+<!-- Hero Section -->
+<section class="py-16 bg-gradient-subtle">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto text-center">
+      <div class="bg-rose-gold/10 text-rose-gold px-4 py-2 rounded-full text-sm font-montserrat font-medium mb-6 inline-block">
+        Our Story
+      </div>
+      <h1 class="text-4xl md:text-5xl font-playfair font-bold text-deep-rose mb-6">
+        Crafted with Passion,<br />Designed for You
+      </h1>
+      <p class="text-xl text-muted-foreground leading-relaxed">
+        At Luli Beads, we believe that accessories should tell a story. Every bag we create 
+        is a testament to traditional craftsmanship, modern design, and the personal touch 
+        that makes each piece uniquely yours.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Story Section -->
+<section class="py-16">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <h2 class="text-3xl font-playfair font-bold text-deep-rose mb-6">
+          The Beginning of Our Journey
+        </h2>
+        <div class="space-y-4 text-muted-foreground">
+          <p>
+            It all started with a simple idea: to create beautiful, handcrafted accessories 
+            that celebrate individuality and craftsmanship. What began as a passion project 
+            in 2020 has grown into a beloved brand that serves customers worldwide.
+          </p>
+          <p>
+            Our founder, inspired by traditional beadwork techniques passed down through 
+            generations, combined these time-honored methods with contemporary design sensibilities. 
+            The result? Stunning beaded bags that are both timeless and thoroughly modern.
+          </p>
+          <p>
+            Every Luli Beads creation starts with carefully selected premium beads, chosen 
+            for their quality, color, and luster. Our skilled artisans then meticulously 
+            hand-craft each piece, ensuring that no two bags are exactly alike.
+          </p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-4">
+          <div class="bg-card rounded-2xl overflow-hidden shadow-sm">
+            <div class="aspect-square bg-gradient-to-br from-rose-gold/20 to-deep-rose/20 rounded-lg"></div>
+          </div>
+          <div class="bg-card rounded-2xl overflow-hidden shadow-sm">
+            <div class="aspect-square bg-gradient-to-br from-luxury-pink to-rose-gold/20 rounded-lg"></div>
+          </div>
+        </div>
+        <div class="space-y-4 mt-8">
+          <div class="bg-card rounded-2xl overflow-hidden shadow-sm">
+            <div class="aspect-square bg-gradient-subtle rounded-lg"></div>
+          </div>
+          <div class="bg-card rounded-2xl overflow-hidden shadow-sm">
+            <div class="aspect-square bg-rose-gold/20 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Values Section -->
+<section class="py-16 bg-gradient-subtle">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-playfair font-bold text-deep-rose mb-4">
+        What We Stand For
+      </h2>
+      <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
+        Our values guide everything we do, from the materials we choose to the way we treat our customers.
+      </p>
+    </div>
+    
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div *ngFor="let value of values; let i = index" 
+           class="text-center hover:shadow-elegant transition-all duration-300 bg-card rounded-2xl p-6">
+        <div class="w-16 h-16 bg-rose-gold/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-rose-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="value.iconPath"/>
+          </svg>
+        </div>
+        <h3 class="font-playfair font-semibold text-lg mb-3">{{ value.title }}</h3>
+        <p class="text-muted-foreground text-sm">{{ value.description }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Timeline Section -->
+<section class="py-16">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-playfair font-bold text-deep-rose mb-4">
+        Our Journey
+      </h2>
+      <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
+        From a small passion project to a global brand, here's how we've grown.
+      </p>
+    </div>
+    
+    <div class="max-w-3xl mx-auto">
+      <div class="space-y-8">
+        <div *ngFor="let item of timeline; let i = index" class="flex gap-6">
+          <div class="flex flex-col items-center">
+            <div class="w-4 h-4 bg-rose-gold rounded-full"></div>
+            <div *ngIf="i < timeline.length - 1" class="w-0.5 h-16 bg-border mt-2"></div>
+          </div>
+          <div class="flex-1 pb-8">
+            <div class="bg-rose-gold/10 text-rose-gold px-3 py-1 rounded-full text-sm font-montserrat font-medium mb-2 inline-block">
+              {{ item.year }}
+            </div>
+            <p class="text-muted-foreground">{{ item.event }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 bg-gradient-to-r from-rose-gold to-deep-rose">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <h2 class="text-3xl font-playfair font-bold text-white mb-4">
+      Ready to Find Your Perfect Bag?
+    </h2>
+    <p class="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+      Explore our collection of handcrafted beaded bags and discover the perfect piece 
+      that tells your unique story.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                      <a routerLink="/" 
+         class="bg-white text-deep-rose hover:bg-white/90 px-8 py-3 text-lg font-medium rounded-lg transition-all duration-300 inline-flex items-center justify-center">
+        Shop Collection
+      </a>
+      <a routerLink="/contact" 
+         class="border-2 border-white text-white hover:bg-white/10 px-8 py-3 text-lg font-medium rounded-lg transition-all duration-300 inline-flex items-center justify-center">
+        Custom Orders
+      </a>
+    </div>
+  </div>
+</section>

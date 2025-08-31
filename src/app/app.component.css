@@ -1,0 +1,12 @@
+/* App Component Styles */
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.bg-background {
+  background-color: var(--background);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}

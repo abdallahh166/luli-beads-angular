@@ -1,0 +1,212 @@
+<section class="py-16 bg-background" id="shop">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-4xl font-playfair font-bold text-deep-rose mb-4">
+        Our Collection
+      </h2>
+      <p class="text-muted-foreground max-w-2xl mx-auto">
+        Discover our exquisite handcrafted beaded bags, each piece uniquely designed with love and attention to detail
+      </p>
+    </div>
+
+    <!-- Filters and Controls -->
+    <div class="flex flex-col lg:flex-row justify-between items-center mb-8 gap-4">
+      <div class="flex flex-wrap gap-4">
+        <select [(ngModel)]="selectedCategory" (change)="onCategoryChange()" 
+                class="w-40 px-3 py-2 border border-border rounded-md bg-background text-foreground">
+          <option value="all">All Categories</option>
+          <option value="evening">Evening</option>
+          <option value="bridal">Bridal</option>
+          <option value="luxury">Luxury</option>
+          <option value="classic">Classic</option>
+        </select>
+
+        <select [(ngModel)]="selectedColor" (change)="onColorChange()" 
+                class="w-32 px-3 py-2 border border-border rounded-md bg-background text-foreground">
+          <option value="all">All Colors</option>
+          <option value="Black">Black</option>
+          <option value="White">White</option>
+          <option value="Rose Gold">Rose Gold</option>
+        </select>
+
+        <select [(ngModel)]="sortBy" (change)="onSortChange()" 
+                class="w-40 px-3 py-2 border border-border rounded-md bg-background text-foreground">
+          <option value="name">Name A-Z</option>
+          <option value="price-low">Price: Low to High</option>
+          <option value="price-high">Price: High to Low</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          [class]="viewMode === 'grid' ? 'bg-rose-gold text-white' : 'bg-background text-foreground border border-border'"
+          class="p-2 rounded-md transition-colors duration-200"
+          (click)="setViewMode('grid')">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+          </svg>
+        </button>
+        <button
+          [class]="viewMode === 'list' ? 'bg-rose-gold text-white' : 'bg-background text-foreground border border-border'"
+          class="p-2 rounded-md transition-colors duration-200"
+          (click)="setViewMode('list')">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Results count -->
+    <div class="flex items-center justify-between mb-6">
+      <p class="text-muted-foreground">
+        Showing {{ filteredProducts.length }} of {{ allProducts.length }} products
+      </p>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div *ngFor="let i of [1,2,3,4,5,6]" class="animate-pulse">
+        <div class="bg-muted h-80 rounded-2xl mb-4"></div>
+        <div class="bg-muted h-4 rounded mb-2"></div>
+        <div class="bg-muted h-4 rounded w-2/3"></div>
+      </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div *ngIf="!isLoading">
+      <div *ngIf="filteredProducts.length === 0" class="text-center py-12">
+        <p class="text-muted-foreground mb-4">
+          {{ allProducts.length === 0 
+            ? "No products available at the moment." 
+            : "No products found matching your filters."
+          }}
+        </p>
+        <button *ngIf="filteredProducts.length === 0 && allProducts.length > 0" 
+                (click)="clearFilters()"
+                class="px-4 py-2 border border-border rounded-md hover:bg-muted transition-colors">
+          Clear Filters
+        </button>
+      </div>
+
+      <div *ngIf="filteredProducts.length > 0" 
+           [class]="viewMode === 'grid' 
+             ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8' 
+             : 'grid grid-cols-1 gap-8'">
+        <div *ngFor="let product of filteredProducts; trackBy: trackByProductId" 
+             class="group">
+          <!-- Grid View -->
+          <div *ngIf="viewMode === 'grid'" 
+               class="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-elegant transition-all duration-300">
+            <div class="relative overflow-hidden">
+              <img [src]="product.images[0] || '/placeholder.svg'" 
+                   [alt]="product.name"
+                   class="w-full h-80 object-cover transition-transform duration-300 group-hover:scale-105">
+              
+              <!-- Badges -->
+              <div class="absolute top-4 left-4 flex flex-col gap-2">
+                <span *ngIf="product.isNew" 
+                      class="bg-deep-rose text-white text-xs px-2 py-1 rounded-full font-medium">
+                  New
+                </span>
+                <span *ngIf="product.isBestseller" 
+                      class="bg-rose-gold text-white text-xs px-2 py-1 rounded-full font-medium">
+                  Bestseller
+                </span>
+              </div>
+              
+              <!-- Quick Actions -->
+              <div class="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button class="bg-white/90 hover:bg-white text-foreground p-2 rounded-full transition-colors"
+                        (click)="addToWishlist(product)">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                  </svg>
+                </button>
+                <button class="bg-white/90 hover:bg-white text-foreground p-2 rounded-full transition-colors"
+                        (click)="quickView(product)">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div class="p-6">
+              <h3 class="text-xl font-playfair font-semibold text-foreground mb-2">
+                {{ product.name }}
+              </h3>
+              
+              <p class="text-muted-foreground text-sm mb-4 line-clamp-2">
+                {{ product.description }}
+              </p>
+              
+              <div class="flex items-center gap-2 mb-4">
+                <span class="text-2xl font-playfair font-bold text-foreground">
+                  ${{ product.price.toFixed(2) }}
+                </span>
+                <span *ngIf="product.originalPrice" 
+                      class="text-lg text-muted-foreground line-through">
+                  ${{ product.originalPrice.toFixed(2) }}
+                </span>
+              </div>
+              
+              <div class="flex gap-2">
+                <button [disabled]="!product.inStock"
+                        (click)="addToCart(product)"
+                        class="flex-1 bg-deep-rose hover:bg-deep-rose/90 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50">
+                  Add to Cart
+                </button>
+                <button [routerLink]="['/product', product.id]"
+                        class="border border-rose-gold text-rose-gold hover:bg-rose-gold hover:text-white px-4 py-2 rounded-lg transition-colors">
+                  View
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- List View -->
+          <div *ngIf="viewMode === 'list'" 
+               class="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-elegant transition-all duration-300">
+            <div class="flex">
+              <div class="w-48 h-48 flex-shrink-0">
+                <img [src]="product.images[0] || '/placeholder.svg'" 
+                     [alt]="product.name"
+                     class="w-full h-full object-cover">
+              </div>
+              <div class="flex-1 p-6">
+                <h3 class="text-xl font-playfair font-semibold text-foreground mb-2">
+                  {{ product.name }}
+                </h3>
+                <p class="text-muted-foreground text-sm mb-4">
+                  {{ product.description }}
+                </p>
+                <div class="flex items-center gap-2 mb-4">
+                  <span class="text-2xl font-playfair font-bold text-foreground">
+                    ${{ product.price.toFixed(2) }}
+                  </span>
+                  <span *ngIf="product.originalPrice" 
+                        class="text-lg text-muted-foreground line-through">
+                    ${{ product.originalPrice.toFixed(2) }}
+                  </span>
+                </div>
+                <div class="flex gap-2">
+                  <button [disabled]="!product.inStock"
+                          (click)="addToCart(product)"
+                          class="bg-deep-rose hover:bg-deep-rose/90 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50">
+                    Add to Cart
+                  </button>
+                  <button [routerLink]="['/product', product.id]"
+                          class="border border-rose-gold text-rose-gold hover:bg-rose-gold hover:text-white px-4 py-2 rounded-lg transition-colors">
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

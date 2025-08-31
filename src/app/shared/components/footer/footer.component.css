@@ -1,0 +1,19 @@
+.container {
+      max-width: 1200px;
+    }
+    
+    .space-x-4 > * + * {
+      margin-left: 1rem;
+    }
+    
+    .space-x-6 > * + * {
+      margin-left: 1.5rem;
+    }
+    
+    .space-y-2 > * + * {
+      margin-top: 0.5rem;
+    }
+    
+    .space-y-4 > * + * {
+      margin-top: 1rem;
+    }

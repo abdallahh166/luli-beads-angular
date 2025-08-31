@@ -1,0 +1,87 @@
+<section class="relative overflow-hidden bg-gradient-subtle">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid lg:grid-cols-2 gap-12 items-center min-h-[600px] py-12 lg:py-20">
+      <!-- Left Content -->
+      <div class="space-y-8 animate-fade-in">
+        <div class="space-y-4">
+          <div class="flex items-center gap-2 text-rose-gold">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+            </svg>
+            <span class="font-montserrat font-medium text-sm tracking-wide uppercase">
+              Handcrafted Luxury
+            </span>
+          </div>
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-playfair font-bold text-deep-rose leading-tight">
+            Exquisite Beaded
+            <span class="block text-rose-gold">Handbags</span>
+          </h1>
+          <p class="text-lg text-muted-foreground font-montserrat max-w-lg leading-relaxed">
+            Discover our collection of uniquely handcrafted beaded bags. 
+            Each piece is carefully made with premium materials and can be 
+            personalized with your name.
+          </p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <button 
+            class="bg-deep-rose hover:bg-deep-rose/90 text-white px-8 py-3 text-lg font-medium rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center gap-2 group"
+            (click)="scrollTo('shop')">
+            <span>Shop Collection</span>
+            <svg class="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+          <button 
+            class="border-2 border-rose-gold text-rose-gold hover:bg-rose-gold hover:text-white px-8 py-3 text-lg font-medium rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+            (click)="scrollTo('custom')">
+            <span>Custom Orders</span>
+          </button>
+        </div>
+        <!-- Stats -->
+        <div class="flex gap-8 pt-8 border-t border-border">
+          <div>
+            <div class="text-2xl font-playfair font-bold text-rose-gold">500+</div>
+            <div class="text-sm text-muted-foreground font-montserrat">Happy Customers</div>
+          </div>
+          <div>
+            <div class="text-2xl font-playfair font-bold text-rose-gold">100%</div>
+            <div class="text-sm text-muted-foreground font-montserrat">Handmade</div>
+          </div>
+          <div>
+            <div class="text-2xl font-playfair font-bold text-rose-gold">Premium</div>
+            <div class="text-sm text-muted-foreground font-montserrat">Quality</div>
+          </div>
+        </div>
+      </div>
+      <!-- Right Content - Hero Image -->
+      <div class="relative">
+        <div class="relative overflow-hidden rounded-2xl shadow-luxury animate-scale-in">
+          <img
+            [src]="heroImage"
+            alt="Luxury handcrafted beaded bags"
+            class="w-full h-[500px] lg:h-[600px] object-cover hover:scale-105 transition-transform duration-700"
+          />
+          <!-- Floating Badge -->
+          <div class="absolute top-6 left-6 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-elegant animate-float">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 bg-rose-gold rounded-full animate-pulse"></div>
+              <span class="text-sm font-montserrat font-medium text-deep-rose">
+                New Collection
+              </span>
+            </div>
+          </div>
+          <!-- Gradient Overlay -->
+          <div class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
+        </div>
+        <!-- Decorative Elements -->
+        <div class="absolute -top-4 -right-4 w-24 h-24 bg-rose-gold/10 rounded-full blur-xl"></div>
+        <div class="absolute -bottom-6 -left-6 w-32 h-32 bg-luxury-pink rounded-full blur-2xl"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Background Decoration -->
+  <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+    <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-rose-gold/5 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-luxury-pink/30 rounded-full blur-3xl"></div>
+  </div>
+</section>

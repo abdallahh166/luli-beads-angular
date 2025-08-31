@@ -1,0 +1,187 @@
+<header class="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border shadow-soft">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <!-- Logo -->
+      <a routerLink="/" class="flex-shrink-0">
+        <h1 class="text-2xl font-playfair font-bold text-deep-rose">
+          Luli Beads
+        </h1>
+        <p class="text-xs text-muted-foreground font-montserrat">
+          Handcrafted Luxury
+        </p>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="hidden md:flex space-x-8">
+        <a routerLink="/" routerLinkActive="text-rose-gold" 
+           class="text-foreground hover:text-rose-gold font-montserrat font-medium transition-colors duration-200 relative group">
+          Home
+          <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-rose-gold transition-all duration-300 group-hover:w-full"></span>
+        </a>
+        
+        <button (click)="scrollToShop()" 
+                class="text-foreground hover:text-rose-gold font-montserrat font-medium transition-colors duration-200 relative group">
+          Shop
+          <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-rose-gold transition-all duration-300 group-hover:w-full"></span>
+        </button>
+        
+        <a routerLink="/about" routerLinkActive="text-rose-gold"
+           class="text-foreground hover:text-rose-gold font-montserrat font-medium transition-colors duration-200 relative group">
+          About
+          <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-rose-gold transition-all duration-300 group-hover:w-full"></span>
+        </a>
+        
+        <a routerLink="/contact" routerLinkActive="text-rose-gold"
+           class="text-foreground hover:text-rose-gold font-montserrat font-medium transition-colors duration-200 relative group">
+          Contact
+          <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-rose-gold transition-all duration-300 group-hover:w-full"></span>
+        </a>
+
+        <!-- Account and Admin links -->
+        <ng-container *ngIf="authService.isUserAuthenticated()">
+          <a routerLink="/account" routerLinkActive="text-rose-gold"
+             class="text-foreground hover:text-rose-gold font-montserrat font-medium transition-colors duration-200 relative group">
+            Account
+            <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-rose-gold transition-all duration-300 group-hover:w-full"></span>
+          </a>
+          
+          <a *ngIf="authService.isUserAdmin()" routerLink="/admin" routerLinkActive="text-rose-gold"
+             class="text-foreground hover:text-rose-gold font-montserrat font-medium transition-colors duration-200 relative group">
+            Admin
+            <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-rose-gold transition-all duration-300 group-hover:w-full"></span>
+          </a>
+        </ng-container>
+      </nav>
+
+      <!-- Right side icons -->
+      <div class="flex items-center space-x-4">
+        <button 
+          class="hidden sm:flex p-2 text-foreground hover:text-rose-gold transition-colors duration-200"
+          (click)="openSearch()">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </button>
+        
+        <button 
+          class="hidden sm:flex p-2 text-foreground hover:text-rose-gold transition-colors duration-200"
+          (click)="navigateToWishlist()">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          </svg>
+        </button>
+        
+        <button 
+          class="hidden sm:flex p-2 text-foreground hover:text-rose-gold transition-colors duration-200"
+          (click)="handleAuthAction()">
+          <svg *ngIf="!authService.isUserAuthenticated()" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+          <svg *ngIf="authService.isUserAuthenticated()" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </button>
+        
+        <button 
+          class="relative p-2 text-foreground hover:text-rose-gold transition-colors duration-200"
+          (click)="navigateToCart()">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+          </svg>
+          <ng-container *ngIf="cartService.totalItems$ | async as totalItems">
+            <span *ngIf="totalItems > 0" 
+                  class="absolute -top-2 -right-2 bg-rose-gold text-white text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+              {{ totalItems }}
+            </span>
+          </ng-container>
+        </button>
+
+        <!-- Mobile menu button -->
+        <button
+          class="md:hidden p-2 text-foreground hover:text-rose-gold transition-colors duration-200"
+          (click)="toggleMobileMenu()">
+          <svg *ngIf="!isMenuOpen" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <svg *ngIf="isMenuOpen" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <div *ngIf="isMenuOpen" class="md:hidden border-t border-border">
+      <div class="px-2 pt-2 pb-3 space-y-1">
+        <a routerLink="/" 
+           class="block px-3 py-2 text-foreground hover:text-rose-gold font-montserrat font-medium transition-colors duration-200"
+           (click)="closeMobileMenu()">
+          Home
+        </a>
+        
+        <button (click)="scrollToShop(); closeMobileMenu()" 
+                class="block w-full text-left px-3 py-2 text-foreground hover:text-rose-gold font-montserrat font-medium transition-colors duration-200">
+          Shop
+        </button>
+        
+        <a routerLink="/about" 
+           class="block px-3 py-2 text-foreground hover:text-rose-gold font-montserrat font-medium transition-colors duration-200"
+           (click)="closeMobileMenu()">
+          About
+        </a>
+        
+        <a routerLink="/contact" 
+           class="block px-3 py-2 text-foreground hover:text-rose-gold font-montserrat font-medium transition-colors duration-200"
+           (click)="closeMobileMenu()">
+          Contact
+        </a>
+
+        <!-- Account and Admin links in mobile menu -->
+        <ng-container *ngIf="authService.isUserAuthenticated()">
+          <a routerLink="/account" 
+             class="block px-3 py-2 text-foreground hover:text-rose-gold font-montserrat font-medium transition-colors duration-200"
+             (click)="closeMobileMenu()">
+            Account
+          </a>
+          
+          <a *ngIf="authService.isUserAdmin()" routerLink="/admin" 
+             class="block px-3 py-2 text-foreground hover:text-rose-gold font-montserrat font-medium transition-colors duration-200"
+             (click)="closeMobileMenu()">
+            Admin
+          </a>
+        </ng-container>
+        
+        <div class="flex space-x-4 px-3 pt-4">
+          <button 
+            class="p-2 text-foreground hover:text-rose-gold transition-colors duration-200"
+            (click)="openSearch(); closeMobileMenu()">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </button>
+          
+          <button 
+            class="p-2 text-foreground hover:text-rose-gold transition-colors duration-200"
+            (click)="navigateToWishlist(); closeMobileMenu()">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+          </button>
+          
+          <button 
+            class="p-2 text-foreground hover:text-rose-gold transition-colors duration-200"
+            (click)="handleAuthAction(); closeMobileMenu()">
+            <svg *ngIf="!authService.isUserAuthenticated()" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            <svg *ngIf="authService.isUserAuthenticated()" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Search Dialog placeholder - implement when needed -->
+</header>
