@@ -1,239 +1,464 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, from } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
-import { supabase } from '../../integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
+// src/app/core/services/auth.service.ts
 
-export interface UserProfile {
-  id: string;
-  email: string;
-  full_name?: string;
-  role: 'user' | 'admin';
-  created_at: string;
-  updated_at: string;
-}
-
-export interface AuthState {
-  user: User | null;
-  session: Session | null;
-  userProfile: UserProfile | null;
-  isAuthenticated: boolean;
-  isAdmin: boolean;
-  isLoading: boolean;
-}
+import { Injectable, inject } from '@angular/core';
+import { BehaviorSubject, Observable, from, throwError, timer } from 'rxjs';
+import { map, tap, catchError, switchMap, shareReplay } from 'rxjs/operators';
+import { 
+  AuthState, 
+  IAuthService, 
+  AuthResult, 
+  SignUpDTO, 
+  SignInDTO, 
+  UpdateProfileDTO, 
+  ChangePasswordDTO,
+  AuthUser, 
+  UserProfile, 
+  UserRole,
+  AuthenticationStatus,
+  AuthError,
+  AuthEventType
+} from '../interfaces/auth.interface';
+import { AuthRepository } from '../repositories/auth.repository';
+import { ProfileRepository } from '../repositories/profile.repository';
+import { AuthEventService } from './auth-event.service';
+import { ValidationService } from './validation.service';
+import { TokenStorageService } from './token-storage.service';
 
 @Injectable({
   providedIn: 'root'
 })
-export class AuthService {
-  private authState = new BehaviorSubject<AuthState>({
+export class AuthService implements IAuthService {
+  private readonly authRepository = inject(AuthRepository);
+  private readonly profileRepository = inject(ProfileRepository);
+  private readonly eventService = inject(AuthEventService);
+  private readonly validationService = inject(ValidationService);
+  private readonly tokenStorage = inject(TokenStorageService);
+
+  private readonly initialState: AuthState = {
+    status: AuthenticationStatus.IDLE,
     user: null,
     session: null,
-    userProfile: null,
+    profile: null,
     isAuthenticated: false,
     isAdmin: false,
-    isLoading: true
-  });
+    isModerator: false,
+    error: null
+  };
 
-  public authState$ = this.authState.asObservable();
+  private readonly authStateSubject = new BehaviorSubject<AuthState>(this.initialState);
+  public readonly authState$ = this.authStateSubject.asObservable().pipe(
+    shareReplay(1)
+  );
+
+  private sessionRefreshTimer?: any;
 
   constructor() {
-    // Don't auto-initialize - let the app call initializeAuth() explicitly
+    this.setupSessionRefresh();
   }
 
+  /**
+   * Initialize authentication state
+   */
   async initializeAuth(): Promise<void> {
-    this.updateAuthState({ isLoading: true });
+    this.updateAuthState({ status: AuthenticationStatus.LOADING });
     
     try {
-      // Set up auth state listener
-      supabase.auth.onAuthStateChange(async (event, session) => {
+      const sessionResult = await this.authRepository.getCurrentSession();
+      
+      if (sessionResult.success && sessionResult.data) {
+        await this.handleSuccessfulAuth(sessionResult.data.user, sessionResult.data);
+      } else {
         this.updateAuthState({ 
-          session, 
-          user: session?.user || null, 
-          isAuthenticated: !!session?.user,
-          isLoading: false
+          status: AuthenticationStatus.UNAUTHENTICATED,
+          error: null 
+        });
+      }
+    } catch (error) {
+      this.handleAuthError(this.createAuthError('INIT_ERROR', 'Failed to initialize authentication'));
+    }
+  }
+
+  /**
+   * Sign up a new user
+   */
+  async signUp(dto: SignUpDTO): Promise<AuthResult<{ needsVerification: boolean }>> {
+    // Validation
+    const validation = this.validateSignUpData(dto);
+    if (!validation.isValid) {
+      const error = this.createAuthError('VALIDATION_ERROR', validation.errors.join(', '));
+      this.updateAuthState({ error });
+      return { success: false, error };
+    }
+
+    this.updateAuthState({ status: AuthenticationStatus.LOADING, error: null });
+    
+    try {
+      const result = await this.authRepository.signUp(dto);
+      
+      if (result.success && result.data) {
+        this.eventService.emitAuthEvent({
+          type: AuthEventType.SIGN_UP,
+          user: result.data.user,
+          timestamp: new Date()
+        });
+
+        this.updateAuthState({ status: AuthenticationStatus.UNAUTHENTICATED });
+        
+        return { 
+          success: true, 
+          data: { needsVerification: result.data.needsVerification } 
+        };
+      } else {
+        this.handleAuthError(result.error!);
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      const authError = this.createAuthError('SIGNUP_ERROR', 'An unexpected error occurred during sign up');
+      this.handleAuthError(authError);
+      return { success: false, error: authError };
+    }
+  }
+
+  /**
+   * Sign in user
+   */
+  async signIn(dto: SignInDTO): Promise<AuthResult> {
+    const validation = this.validateSignInData(dto);
+    if (!validation.isValid) {
+      const error = this.createAuthError('VALIDATION_ERROR', validation.errors.join(', '));
+      this.updateAuthState({ error });
+      return { success: false, error };
+    }
+
+    this.updateAuthState({ status: AuthenticationStatus.LOADING, error: null });
+    
+    try {
+      const result = await this.authRepository.signIn(dto);
+      
+      if (result.success && result.data) {
+        await this.handleSuccessfulAuth(result.data.user, result.data.session);
+        
+        this.eventService.emitAuthEvent({
+          type: AuthEventType.SIGN_IN,
+          user: result.data.user,
+          timestamp: new Date()
+        });
+
+        return { success: true };
+      } else {
+        this.handleAuthError(result.error!);
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      const authError = this.createAuthError('SIGNIN_ERROR', 'An unexpected error occurred during sign in');
+      this.handleAuthError(authError);
+      return { success: false, error: authError };
+    }
+  }
+
+  /**
+   * Sign out user
+   */
+  async signOut(): Promise<AuthResult> {
+    try {
+      const currentUser = this.getCurrentUser();
+      
+      await this.authRepository.signOut();
+      await this.tokenStorage.removeToken();
+      await this.tokenStorage.removeRefreshToken();
+      
+      this.clearSessionRefreshTimer();
+      this.clearAuthState();
+      
+      if (currentUser) {
+        this.eventService.emitAuthEvent({
+          type: AuthEventType.SIGN_OUT,
+          user: currentUser,
+          timestamp: new Date()
+        });
+      }
+      
+      return { success: true };
+    } catch (error) {
+      const authError = this.createAuthError('SIGNOUT_ERROR', 'Failed to sign out');
+      return { success: false, error: authError };
+    }
+  }
+
+  /**
+   * Reset password
+   */
+  async resetPassword(email: string): Promise<AuthResult> {
+    const emailValidation = this.validationService.validateEmail(email);
+    if (!emailValidation.isValid) {
+      const error = this.createAuthError('VALIDATION_ERROR', emailValidation.error!);
+      return { success: false, error };
+    }
+
+    try {
+      const result = await this.authRepository.resetPassword(email);
+      
+      if (result.success) {
+        this.eventService.emitAuthEvent({
+          type: AuthEventType.PASSWORD_RESET,
+          timestamp: new Date()
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      const authError = this.createAuthError('RESET_ERROR', 'Failed to reset password');
+      return { success: false, error: authError };
+    }
+  }
+
+  /**
+   * Update user password
+   */
+  async updatePassword(dto: ChangePasswordDTO): Promise<AuthResult> {
+    const validation = this.validatePasswordChange(dto);
+    if (!validation.isValid) {
+      const error = this.createAuthError('VALIDATION_ERROR', validation.errors.join(', '));
+      return { success: false, error };
+    }
+
+    try {
+      const result = await this.authRepository.updatePassword(dto);
+      return result;
+    } catch (error) {
+      const authError = this.createAuthError('UPDATE_PASSWORD_ERROR', 'Failed to update password');
+      return { success: false, error: authError };
+    }
+  }
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(dto: UpdateProfileDTO): Promise<AuthResult<UserProfile>> {
+    const currentUser = this.getCurrentUser();
+    if (!currentUser) {
+      const error = this.createAuthError('NOT_AUTHENTICATED', 'User not authenticated');
+      return { success: false, error };
+    }
+
+    try {
+      const result = await this.profileRepository.updateProfile(currentUser.id, dto);
+      
+      if (result.success && result.data) {
+        this.updateAuthState({ profile: result.data });
+        
+        this.eventService.emitAuthEvent({
+          type: AuthEventType.PROFILE_UPDATED,
+          user: currentUser,
+          timestamp: new Date()
         });
         
-        // Fetch user profile when session changes
-        if (session?.user) {
-          await this.fetchUserProfile(session.user.id);
-        } else {
-          // Clear profile when user logs out
-          this.updateAuthState({ userProfile: null, isAdmin: false });
-        }
-      });
-
-      // Get initial session
-      const { data: { session } } = await supabase.auth.getSession();
-      this.updateAuthState({ 
-        session, 
-        user: session?.user || null, 
-        isAuthenticated: !!session?.user,
-        isLoading: false
-      });
-      
-      // Fetch user profile for initial session
-      if (session?.user) {
-        await this.fetchUserProfile(session.user.id);
-      }
-    } catch (error) {
-      console.error('Error initializing auth:', error);
-      this.updateAuthState({ isLoading: false });
-    }
-  }
-
-
-
-  private async fetchUserProfile(userId: string): Promise<void> {
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        // If profile doesn't exist, create it
-        if (error.code === 'PGRST116') {
-          console.log('Profile not found, creating new profile...');
-          await this.createUserProfile(userId);
-          return;
-        }
-        console.error('Error fetching user profile:', error);
-        return;
-      }
-
-      if (profile) {
-        this.updateAuthState({ 
-          userProfile: profile, 
-          isAdmin: profile.role === 'admin' 
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
-  }
-
-  private async createUserProfile(userId: string): Promise<void> {
-    try {
-      const { data: user } = await supabase.auth.getUser();
-      
-      if (user.user) {
-        const { error } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            email: user.user.email,
-            full_name: user.user.user_metadata?.['full_name'] || 
-                      user.user.user_metadata?.['name'] || 
-                      'User'
-          });
-
-        if (!error) {
-          // Fetch the newly created profile
-          await this.fetchUserProfile(userId);
-        }
-      }
-    } catch (error) {
-      console.error('Error creating user profile:', error);
-    }
-  }
-
-  private updateAuthState(updates: Partial<AuthState>): void {
-    this.authState.next({ ...this.authState.value, ...updates });
-  }
-
-  private clearAuth(): void {
-    this.updateAuthState({
-      user: null,
-      session: null,
-      userProfile: null,
-      isAuthenticated: false,
-      isAdmin: false
-    });
-  }
-
-  async signUp(email: string, password: string, fullName?: string): Promise<{ error: any }> {
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: fullName ? { full_name: fullName } : undefined
-        }
-      });
-      
-      if (!error && data.user) {
-        // Wait a moment for the trigger to create the profile
-        setTimeout(() => {
-          this.fetchUserProfile(data.user!.id);
-        }, 1000);
+        return { success: true, data: result.data };
       }
       
-      return { error };
+      return { success: false, error: result.error };
     } catch (error) {
-      return { error };
+      const authError = this.createAuthError('UPDATE_PROFILE_ERROR', 'Failed to update profile');
+      return { success: false, error: authError };
     }
   }
 
-  async signIn(email: string, password: string): Promise<{ error: any }> {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      return { error };
-    } catch (error) {
-      return { error };
-    }
-  }
-
-  async signOut(): Promise<void> {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Supabase signOut error:', error);
-      }
-      this.clearAuth();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  }
-
-  async resetPassword(email: string): Promise<{ error: any }> {
-    try {
-      const redirectUrl = `${window.location.origin}/auth`;
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl
-      });
-      
-      return { error };
-    } catch (error) {
-      return { error };
-    }
-  }
-
-  getCurrentUser(): User | null {
-    return this.authState.value.user;
+  // Getters
+  getCurrentUser(): AuthUser | null {
+    return this.authStateSubject.value.user;
   }
 
   getCurrentProfile(): UserProfile | null {
-    return this.authState.value.userProfile;
+    return this.authStateSubject.value.profile;
   }
 
-  isUserAuthenticated(): boolean {
-    return this.authState.value.isAuthenticated;
+  isAuthenticated(): boolean {
+    return this.authStateSubject.value.isAuthenticated;
   }
 
-  isUserAdmin(): boolean {
-    return this.authState.value.isAdmin;
+  isAdmin(): boolean {
+    return this.authStateSubject.value.isAdmin;
   }
 
-  isLoading(): boolean {
-    return this.authState.value.isLoading;
+  isModerator(): boolean {
+    return this.authStateSubject.value.isModerator;
+  }
+
+  hasRole(role: UserRole): boolean {
+    const profile = this.getCurrentProfile();
+    return profile?.role === role;
+  }
+
+  hasPermission(permission: string): boolean {
+    const profile = this.getCurrentProfile();
+    if (!profile) return false;
+    
+    // Implement permission logic based on roles
+    const permissions = this.getRolePermissions(profile.role);
+    return permissions.includes(permission);
+  }
+
+  // Private methods
+  private async handleSuccessfulAuth(user: AuthUser, session: any): Promise<void> {
+    try {
+      // Fetch user profile
+      const profileResult = await this.profileRepository.getProfile(user.id);
+      let profile: UserProfile | null = null;
+      
+      if (profileResult.success && profileResult.data) {
+        profile = profileResult.data;
+      } else if (profileResult.error?.code === 'PROFILE_NOT_FOUND') {
+        // Create profile if it doesn't exist
+        const createResult = await this.profileRepository.createProfile(user.id, {
+          email: user.email,
+          role: UserRole.USER
+        });
+        if (createResult.success) {
+          profile = createResult.data!;
+        }
+      }
+
+      // Update auth state
+      this.updateAuthState({
+        status: AuthenticationStatus.AUTHENTICATED,
+        user,
+        session,
+        profile,
+        isAuthenticated: true,
+        isAdmin: profile?.role === UserRole.ADMIN,
+        isModerator: profile?.role === UserRole.MODERATOR || profile?.role === UserRole.ADMIN,
+        error: null
+      });
+
+      // Store tokens
+      if (session) {
+        await this.tokenStorage.setToken(session.accessToken);
+        await this.tokenStorage.setRefreshToken(session.refreshToken);
+      }
+
+      this.setupSessionRefresh();
+    } catch (error) {
+      console.error('Error handling successful auth:', error);
+    }
+  }
+
+  private handleAuthError(error: AuthError): void {
+    this.updateAuthState({ 
+      status: AuthenticationStatus.ERROR,
+      error,
+      isAuthenticated: false 
+    });
+  }
+
+  private updateAuthState(updates: Partial<AuthState>): void {
+    const currentState = this.authStateSubject.value;
+    this.authStateSubject.next({ ...currentState, ...updates });
+  }
+
+  private clearAuthState(): void {
+    this.authStateSubject.next({
+      ...this.initialState,
+      status: AuthenticationStatus.UNAUTHENTICATED
+    });
+  }
+
+  private createAuthError(code: string, message: string, details?: any): AuthError {
+    return { code, message, details };
+  }
+
+  private setupSessionRefresh(): void {
+    this.clearSessionRefreshTimer();
+    
+    // Refresh session every 45 minutes
+    this.sessionRefreshTimer = timer(45 * 60 * 1000).subscribe(async () => {
+      await this.refreshSession();
+    });
+  }
+
+  private clearSessionRefreshTimer(): void {
+    if (this.sessionRefreshTimer) {
+      this.sessionRefreshTimer.unsubscribe();
+      this.sessionRefreshTimer = null;
+    }
+  }
+
+  private async refreshSession(): Promise<void> {
+    try {
+      const result = await this.authRepository.refreshSession();
+      if (result.success && result.data) {
+        const currentState = this.authStateSubject.value;
+        this.updateAuthState({ session: result.data });
+        await this.tokenStorage.setToken(result.data.accessToken);
+      } else {
+        // Session refresh failed, sign out user
+        await this.signOut();
+      }
+    } catch (error) {
+      console.error('Session refresh error:', error);
+      await this.signOut();
+    }
+  }
+
+  private validateSignUpData(dto: SignUpDTO): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    const emailValidation = this.validationService.validateEmail(dto.email);
+    if (!emailValidation.isValid) {
+      errors.push(emailValidation.error!);
+    }
+    
+    const passwordValidation = this.validationService.validatePassword(dto.password);
+    if (!passwordValidation.isValid) {
+      errors.push(...passwordValidation.errors);
+    }
+    
+    if (!dto.fullName?.trim()) {
+      errors.push('Full name is required');
+    }
+    
+    return { isValid: errors.length === 0, errors };
+  }
+
+  private validateSignInData(dto: SignInDTO): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (!dto.email) {
+      errors.push('Email is required');
+    }
+    
+    if (!dto.password) {
+      errors.push('Password is required');
+    }
+    
+    return { isValid: errors.length === 0, errors };
+  }
+
+  private validatePasswordChange(dto: ChangePasswordDTO): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (!dto.currentPassword) {
+      errors.push('Current password is required');
+    }
+    
+    const passwordValidation = this.validationService.validatePassword(dto.newPassword);
+    if (!passwordValidation.isValid) {
+      errors.push(...passwordValidation.errors);
+    }
+    
+    if (dto.newPassword !== dto.confirmPassword) {
+      errors.push('Passwords do not match');
+    }
+    
+    return { isValid: errors.length === 0, errors };
+  }
+
+  private getRolePermissions(role: UserRole): string[] {
+    const permissions = {
+      [UserRole.USER]: ['read:profile', 'update:profile'],
+      [UserRole.MODERATOR]: ['read:profile', 'update:profile', 'moderate:content'],
+      [UserRole.ADMIN]: ['*'] // All permissions
+    };
+    
+    return permissions[role] || [];
   }
 }

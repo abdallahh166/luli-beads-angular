@@ -4,6 +4,7 @@ import { AuthService } from '../services/auth.service';
 import { CartStateService } from '../services/cart-state.service';
 import { firstValueFrom } from 'rxjs';
 import { filter, take, timeout } from 'rxjs/operators';
+import { AuthenticationStatus } from '../interfaces/auth.interface';
 
 export const CartSyncGuard = async () => {
   const cartStateService = inject(CartStateService);
@@ -14,7 +15,7 @@ export const CartSyncGuard = async () => {
     // Wait for auth state to be initialized
     await firstValueFrom(
       authService.authState$.pipe(
-        filter(state => !state.isLoading),
+        filter(state => state.status !== AuthenticationStatus.LOADING),
         take(1),
         timeout(5000) // 5 second timeout
       )

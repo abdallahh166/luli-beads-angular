@@ -1,153 +1,329 @@
-import { Component, OnInit } from '@angular/core';
+// src/app/pages/auth/auth.component.ts
+
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
+
 import { AuthService } from '../../core/services/auth.service';
+import { AuthRepository } from '../../core/repositories/auth.repository';
+import { ValidationService } from '../../core/services/validation.service';
+import { 
+  SignInDTO, 
+  SignUpDTO, 
+  AuthenticationStatus 
+} from '../../core/interfaces/auth.interface';
 
-interface SignInData {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
-
-interface SignUpData {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
+// Custom validators
+import { CustomValidators } from '../../core/validators/custom.validators';
 
 @Component({
   selector: 'app-auth',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule
+    ReactiveFormsModule,
+    RouterLink
   ],
   templateUrl: './auth.component.html',
   styleUrl: './auth.component.css'
 })
-export class AuthComponent implements OnInit {
+export class AuthComponent implements OnInit, OnDestroy {
+  private readonly authService = inject(AuthService);
+  private readonly authRepository = inject(AuthRepository);
+  private readonly validationService = inject(ValidationService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly fb = inject(FormBuilder);
+  private readonly destroy$ = new Subject<void>();
+
+  // State
   activeTab: 'signin' | 'signup' = 'signin';
+  isLoading = false;
+  showPassword = false;
+  showConfirmPassword = false;
   
-  signInData: SignInData = {
-    email: '',
-    password: '',
-    rememberMe: false
-  };
+  // Form groups
+  signInForm: FormGroup;
+  signUpForm: FormGroup;
   
-  signUpData: SignUpData = {
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  };
+  // Error handling
+  authError: string | null = null;
+  successMessage: string | null = null;
   
-  isSigningIn = false;
-  isSigningUp = false;
-  signInError = '';
-  signUpError = '';
-  signUpSuccess = '';
+  // Enum reference for template
+  readonly AuthStatus = AuthenticationStatus;
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  constructor() {
+    this.signInForm = this.createSignInForm();
+    this.signUpForm = this.createSignUpForm();
+  }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.setupAuthStateSubscription();
+    this.handleRouteParams();
+  }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // Form creation
+  private createSignInForm(): FormGroup {
+    return this.fb.group({
+      email: ['', [Validators.required, CustomValidators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      rememberMe: [false]
+    });
+  }
+
+  private createSignUpForm(): FormGroup {
+    return this.fb.group({
+      fullName: ['', [Validators.required, Validators.minLength(2), CustomValidators.name]],
+      email: ['', [Validators.required, CustomValidators.email]],
+      phone: ['', [CustomValidators.phone]], // Optional
+      password: ['', [Validators.required, CustomValidators.password]],
+      confirmPassword: ['', [Validators.required]],
+      acceptTerms: [false, [Validators.requiredTrue]]
+    }, { 
+      validators: CustomValidators.passwordMatch('password', 'confirmPassword')
+    });
+  }
+
+  // Subscriptions
+  private setupAuthStateSubscription(): void {
+    this.authService.authState$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(state => {
+        this.isLoading = state.status === AuthenticationStatus.LOADING;
+        
+        if (state.isAuthenticated) {
+          this.handleSuccessfulAuth();
+        }
+        
+        if (state.error) {
+          this.authError = state.error.message;
+        }
+      });
+  }
+
+  private handleRouteParams(): void {
+    this.route.queryParams
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        if (params['tab']) {
+          this.activeTab = params['tab'] === 'signup' ? 'signup' : 'signin';
+        }
+        
+        if (params['message']) {
+          this.successMessage = params['message'];
+        }
+        
+        if (params['error']) {
+          this.authError = params['error'];
+        }
+      });
+  }
+
+  // Tab management
   setActiveTab(tab: 'signin' | 'signup'): void {
     this.activeTab = tab;
-    this.clearErrors();
+    this.clearMessages();
+    this.resetForms();
+    
+    // Update URL without navigation
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab },
+      queryParamsHandling: 'merge'
+    });
   }
 
-  clearErrors(): void {
-    this.signInError = '';
-    this.signUpError = '';
-    this.signUpSuccess = '';
-  }
-
+  // Form submissions
   async onSignIn(): Promise<void> {
-    if (!this.signInData.email || !this.signInData.password) {
-      this.signInError = 'Please fill in all required fields.';
+    if (this.signInForm.invalid) {
+      this.markFormGroupTouched(this.signInForm);
       return;
     }
 
-    this.isSigningIn = true;
-    this.signInError = '';
+    this.clearMessages();
+    const formValue = this.signInForm.value;
     
-    try {
-      const result = await this.authService.signIn(this.signInData.email, this.signInData.password);
+    const signInData: SignInDTO = {
+      email: formValue.email.trim(),
+      password: formValue.password,
+      rememberMe: formValue.rememberMe
+    };
+
+    const result = await this.authService.signIn(signInData);
+    
+    if (!result.success && result.error) {
+      this.authError = result.error.message;
       
-      if (result.error) {
-        this.signInError = result.error.message || 'Sign in failed. Please try again.';
-      } else {
-        // Redirect to home page or intended destination
-        this.router.navigate(['/']);
+      // Handle specific errors
+      if (result.error.code === 'EMAIL_NOT_CONFIRMED') {
+        this.showEmailVerificationMessage(signInData.email);
       }
-    } catch (error: any) {
-      this.signInError = 'An unexpected error occurred. Please try again.';
-    } finally {
-      this.isSigningIn = false;
     }
   }
 
   async onSignUp(): Promise<void> {
-    if (!this.signUpData.name || !this.signUpData.email || !this.signUpData.password || !this.signUpData.confirmPassword) {
-      this.signUpError = 'Please fill in all required fields.';
+    if (this.signUpForm.invalid) {
+      this.markFormGroupTouched(this.signUpForm);
       return;
     }
 
-    if (this.signUpData.password !== this.signUpData.confirmPassword) {
-      this.signUpError = 'Passwords do not match.';
-      return;
-    }
-
-    if (this.signUpData.password.length < 6) {
-      this.signUpError = 'Password must be at least 6 characters long.';
-      return;
-    }
-
-    this.isSigningUp = true;
-    this.signUpError = '';
-    this.signUpSuccess = '';
+    this.clearMessages();
+    const formValue = this.signUpForm.value;
     
-    try {
-      const result = await this.authService.signUp(this.signUpData.email, this.signUpData.password, this.signUpData.name);
-      
-      if (result.error) {
-        this.signUpError = result.error.message || 'Sign up failed. Please try again.';
-      } else {
-        this.signUpSuccess = 'Account created successfully! Please check your email to verify your account.';
-        this.signUpData = {
-          name: '',
-          email: '',
-          password: '',
-          confirmPassword: ''
-        };
-      }
-    } catch (error: any) {
-      this.signUpError = 'An unexpected error occurred. Please try again.';
-    } finally {
-      this.isSigningUp = false;
+    const signUpData: SignUpDTO = {
+      email: formValue.email.trim(),
+      password: formValue.password,
+      fullName: formValue.fullName.trim(),
+      phone: formValue.phone?.trim()
+    };
+
+    const result = await this.authService.signUp(signUpData);
+    
+    if (result.success && result.data?.needsVerification) {
+      this.successMessage = 'Account created successfully! Please check your email to verify your account.';
+      this.setActiveTab('signin');
+    } else if (!result.success && result.error) {
+      this.authError = result.error.message;
     }
   }
 
+  // Social authentication
   async signInWithGoogle(): Promise<void> {
     try {
-      // TODO: Implement Google OAuth
-      console.log('Google sign in clicked');
+      await this.authRepository.signInWithGoogle();
     } catch (error) {
-      console.error('Google sign in error:', error);
+      this.authError = 'Failed to sign in with Google. Please try again.';
     }
   }
 
   async signInWithFacebook(): Promise<void> {
     try {
-      // TODO: Implement Facebook OAuth
-      console.log('Facebook sign in clicked');
+      await this.authRepository.signInWithFacebook();
     } catch (error) {
-      console.error('Facebook sign in error:', error);
+      this.authError = 'Failed to sign in with Facebook. Please try again.';
     }
+  }
+
+  // Utility methods
+  private handleSuccessfulAuth(): void {
+    const redirectUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+    this.router.navigate([redirectUrl]);
+  }
+
+  private showEmailVerificationMessage(email: string): void {
+    this.successMessage = `Please check your email (${email}) and click the verification link to activate your account.`;
+  }
+
+  private clearMessages(): void {
+    this.authError = null;
+    this.successMessage = null;
+  }
+
+  private resetForms(): void {
+    this.signInForm.reset({
+      email: '',
+      password: '',
+      rememberMe: false
+    });
+    
+    this.signUpForm.reset({
+      fullName: '',
+      email: '',
+      phone: '',
+      password: '',
+      confirmPassword: '',
+      acceptTerms: false
+    });
+  }
+
+  private markFormGroupTouched(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      control?.markAsTouched();
+      
+      if (control && 'controls' in control) {
+        this.markFormGroupTouched(control as FormGroup);
+      }
+    });
+  }
+
+  // Template helpers
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  getFieldError(formGroup: FormGroup, fieldName: string): string | null {
+    const field = formGroup.get(fieldName);
+    
+    if (field && field.invalid && (field.dirty || field.touched)) {
+      const errors = field.errors;
+      
+      if (errors?.['required']) {
+        return this.getRequiredErrorMessage(fieldName);
+      }
+      
+      if (errors?.['email']) {
+        return 'Please enter a valid email address';
+      }
+      
+      if (errors?.['minlength']) {
+        const requiredLength = errors['minlength'].requiredLength;
+        return `Must be at least ${requiredLength} characters long`;
+      }
+      
+      if (errors?.['pattern']) {
+        return this.getPatternErrorMessage(fieldName);
+      }
+      
+      if (errors?.['passwordMismatch']) {
+        return 'Passwords do not match';
+      }
+      
+      if (errors?.['weakPassword']) {
+        return errors['weakPassword'];
+      }
+      
+      return 'Invalid input';
+    }
+    
+    return null;
+  }
+
+  private getRequiredErrorMessage(fieldName: string): string {
+    const messages: Record<string, string> = {
+      email: 'Email is required',
+      password: 'Password is required',
+      fullName: 'Full name is required',
+      confirmPassword: 'Please confirm your password',
+      acceptTerms: 'You must accept the terms and conditions'
+    };
+    
+    return messages[fieldName] || `${fieldName} is required`;
+  }
+
+  private getPatternErrorMessage(fieldName: string): string {
+    const messages: Record<string, string> = {
+      phone: 'Please enter a valid phone number',
+      fullName: 'Name can only contain letters, spaces, and hyphens'
+    };
+    
+    return messages[fieldName] || 'Invalid format';
+  }
+
+  isFieldInvalid(formGroup: FormGroup, fieldName: string): boolean {
+    const field = formGroup.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
   }
 }
